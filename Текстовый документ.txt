@@ -1,0 +1,116 @@
+from pygame import *
+from random import randint
+from time import time as timer
+
+class GameSprite(sprite.Sprite):
+    def __init__(self, sprite_image, player_x, player_y, speed_x, speed_y, wight, height):
+        super().__init__()
+        self.image = transform.scale(image.load(sprite_image), (wight, height))
+        self.rect = self.image.get_rect()
+        self.rect.x = player_x
+        self.rect.y = player_y
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+class Player(GameSprite):
+
+    def update(self):
+
+        jumpCount = 10
+        isJump = False
+
+        key_pressed = key.get_pressed()
+        
+        if key_pressed[K_LEFT] and self.rect.x > 5:
+            self.rect.x -= self.speed_x
+            self.image = transform.scale(image.load('knight_l.png'), (90, 90))
+
+        if key_pressed[K_RIGHT] and self.rect.x < 600:
+            self.rect.x += self.speed_x
+            self.image = transform.scale(image.load('knight_r.png'), (90, 90))
+
+        #if key_pressed[K_UP] and self.rect.y >= 0:
+            #self.rect.y -= self.speed_y
+
+        #if key_pressed[K_DOWN] and self.rect.y <= 400:
+            #self.rect.y += self.speed_y
+
+        if key_pressed[K_UP] and self.rect.y >= 0:
+            isJump = True
+
+        if isJump:
+            if jumpCount >= -10:
+                
+                self.rect.y -= jumpCount * 2
+
+            #else:
+                #self.rect.y += jumpCount *2
+                #jumpCount -= 1
+            
+            else:
+                isJump = False
+                jumpCount = 10
+
+    def fire(self):
+        bullet = Bullet('bullet.png', self.rect.centerx, self.rect.top, 15, 15, 20)
+        bullets.add(bullet)
+        fire.play()
+        
+
+class Plathorms(GameSprite):
+
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+window = display.set_mode((700, 500))
+display.set_caption('Castel')
+
+background = transform.scale(image.load('background.png'), (700,500))
+
+font.init()
+font1 = font.Font(None, 30)
+font2 = font.Font(None, 70)
+win = font2.render('YOU WIN!', True, (255, 215, 0))
+lose = font2.render('YOU LOSE!', True, (255, 0, 0))
+
+mixer.init()
+#mixer.music.load('space.ogg')
+#mixer.music.play()
+
+#fire = mixer.Sound('fire.ogg')
+clock = time.Clock()
+
+player = Player('knight_r.png', 25, 350, 5, 5, 90, 90)
+princess = GameSprite('princess.png', 600, 0, 0, 0, 100, 100)
+prison = GameSprite('prison.png', 600, 0, 0, 0, 100, 100)
+
+plathorms = sprite.Group()
+plathorm = Plathorms('platforma.png', -60, 420, 0, 0, 900, 100)
+plathorms.add(plathorm)
+
+
+
+run = True
+finish = False
+
+while run:
+
+    for e in event.get():
+        if e.type == QUIT:
+            run = False
+     
+    if finish != True: 
+        window.blit(background,(0, 0))
+
+        plathorms.draw(window)
+        player.reset()
+        princess.reset()
+        prison.reset()
+
+        player.update()
+    
+    clock.tick(40)
+    display.update()  
