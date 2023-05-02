@@ -3,12 +3,16 @@ from random import randint
 from time import time as timer
 
 class GameSprite(sprite.Sprite):
-    def __init__(self, sprite_image, player_x, player_y, speed_x, speed_y, wight, height):
+    def __init__(self, sprite_image, player_x, player_y, speed_x, speed_y, width, height):
         super().__init__()
-        self.image = transform.scale(image.load(sprite_image), (wight, height))
+        self.image = transform.scale(image.load(sprite_image), (width, height))
         self.rect = self.image.get_rect()
+        self.rect_bottom = 0
+        self.rect= self.image.get_rect()
         self.rect.x = player_x
         self.rect.y = player_y
+        self.width = width
+        self.height = height
         self.speed_x = speed_x
         self.speed_y = speed_y
 
@@ -18,57 +22,89 @@ class GameSprite(sprite.Sprite):
 class Player(GameSprite):
 
     def update(self):
-
-        jumpCount = 10
+        dx = 0
+        dy = 0
+        jumpCount = 0
         isJump = False
-
         key_pressed = key.get_pressed()
         
-        if key_pressed[K_LEFT] and self.rect.x > 5:
-            self.rect.x -= self.speed_x
+        if key_pressed[K_LEFT] and self.rect.x :
+            dx -= self.speed_x
             self.image = transform.scale(image.load('knight_l.png'), (90, 90))
 
-        if key_pressed[K_RIGHT] and self.rect.x < 600:
-            self.rect.x += self.speed_x
+        if key_pressed[K_RIGHT] and self.rect.x :
+            dx += self.speed_x
             self.image = transform.scale(image.load('knight_r.png'), (90, 90))
 
-        #if key_pressed[K_UP] and self.rect.y >= 0:
-            #self.rect.y -= self.speed_y
+        if key_pressed[K_DOWN] and isJump == False :
+            dy += self.speed_y
 
-        #if key_pressed[K_DOWN] and self.rect.y <= 400:
-            #self.rect.y += self.speed_y
-
-        if key_pressed[K_UP] and self.rect.y >= 0:
-            isJump = True
-
-        if isJump:
-            if jumpCount >= -10:
-                
-                self.rect.y -= jumpCount * 2
-
-            #else:
-                #self.rect.y += jumpCount *2
-                #jumpCount -= 1
-            
-            else:
-                isJump = False
-                jumpCount = 10
-
-    def fire(self):
-        bullet = Bullet('bullet.png', self.rect.centerx, self.rect.top, 15, 15, 20)
-        bullets.add(bullet)
-        fire.play()
+        if key_pressed[K_UP] and isJump == False :
+            jumpCount = -10
+            isJump == True
         
+        if key_pressed[K_UP] == False :
+            isJump == False
+        
+        jumpCount += 1
+        if jumpCount > 10:
+            jumpCount = 10
 
-class Plathorms(GameSprite):
+        dy += jumpCount
 
-    def reset(self):
-        window.blit(self.image, (self.rect.x, self.rect.y))
+       #for tile in world.tile_list:
+       #    if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+       #        if jumpCount < 0:
+       #            dy = tile[1].bottom - self.rect.top 
+       #            jumpCount = 0
 
-window = display.set_mode((700, 500))
+       #        elif jumpCount >= 0:
+       #            dy = tile[1].top - self.rect.bottom
+       #            jumpCount = 0
+
+
+        
+        self.rect.x += dx
+        self.rect.y += dy
+
+        if self.rect.bottom > 650:
+            self.rect.bottom = 650
+            dy = 0 
+    
+
+class World():
+    def __init__(self, data):
+        
+        self.tile_list = []
+        plathorm_img = image.load('platforma.png')
+        row_count =  0
+
+        for row in data:
+            col_count = - 150
+            for tile in row:
+                if tile == 1:
+                    img = transform.scale(plathorm_img, (tile_size_x, tile_size_y))
+                    img_rect = img.get_rect() 
+                    img_rect.x = col_count + 150
+                    img_rect.y = row_count + 100
+                    tile = (img, img_rect)
+                    self.tile_list.append(tile)
+                col_count += 100
+            row_count += 100
+
+    def draw(self):
+        for tile in self.tile_list:
+            window.blit(tile[0], tile[1])
+
+
+
+window = display.set_mode((700, 650))
 display.set_caption('Castel')
 
-background = transform.scale(image.load('background.png'), (700,500))
+tile_size_x = 125
+tile_size_y = 100
+
+background = transform.scale(image.load('background.png'), (700, 650))
 
 font.init()
 font1 = font.Font(None, 30)
@@ -83,15 +119,22 @@ mixer.init()
 #fire = mixer.Sound('fire.ogg')
 clock = time.Clock()
 
-player = Player('knight_r.png', 25, 350, 5, 5, 90, 90)
-princess = GameSprite('princess.png', 600, 0, 0, 0, 100, 100)
-prison = GameSprite('prison.png', 600, 0, 0, 0, 100, 100)
-
-plathorms = sprite.Group()
-plathorm = Plathorms('platforma.png', -60, 420, 0, 0, 900, 100)
-plathorms.add(plathorm)
+player = Player('knight_r.png', 20, 500, 10, 10, 90, 90)
+princess = GameSprite('princess.png', 600, 25, 0, 0, 100, 100)
+prison = GameSprite('prison.png', 605, 25, 0, 0, 100, 100)
 
 
+
+world_data = [
+[1, 0, 1, 0, 1, 0, 1],
+[0, 1, 0, 1, 0, 1, 0],
+[1, 0, 1, 0, 1, 0, 1],
+[0, 1, 0, 1, 0, 1, 0],
+[1, 0, 1, 0, 1, 0, 1],
+ ] 
+
+
+world = World(world_data)
 
 run = True
 finish = False
@@ -105,12 +148,14 @@ while run:
     if finish != True: 
         window.blit(background,(0, 0))
 
-        plathorms.draw(window)
+        
+        world.draw()
+
         player.reset()
         princess.reset()
         prison.reset()
 
         player.update()
     
-    clock.tick(40)
+    clock.tick(60)
     display.update()  
